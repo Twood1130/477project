@@ -9,7 +9,7 @@ ADFLAGS=-p m88 -c usbtiny -P usb
 .PHONY : flash erase clean
 
 $(TARGET).obj : $(TARGET).o
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) lcd.c $< -o $@
 
 $(TARGET).hex: $(TARGET).obj
 	$(OBJCOPY) -R .eeprom -O ihex $< $@
