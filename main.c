@@ -15,20 +15,21 @@ int main(void){
   wdt_disable(); 
 
   // Set pin 0 as output, 1 as input
-  DDRB |= (1 << PIN0);
+  DDRB |= (1 << PIN0) | (1 << PIN2);
+  PORTB = (1 << PIN2); //turn on backlight
 
   //USART init
   UCSR0A |= (1 << U2X0);
   UCSR0C |= (1 << UCSZ01) | (1 << UCSZ00); //set USART to 8-bits
   UBRR0 = 12; //set baud rate to 9600, at 1.8432 mhz
-  UCSR0B |= (1 << RXEN0);
   
   lcd_init(LCD_DISP_ON_CURSOR_BLINK);
-  lcd_puts("1234567890ABCDEF\nGHIJKLMOPQRSTUV");
+  lcd_puts("1234567890ABCDEF\nGHIJKLMOPQRSTUVW");
   
+  UCSR0B |= (1 << RXEN0);
   while (1) {
-	if ((UCSR0A & 0b10000000) == (1 << RXC0)){
-		PORTB = (1 << PIN0);
+	if (UCSR0A & (1 << RXC0)){
+		PORTB |= (1 << PIN0);
 		gps_out = UDR0;
 		if (gps_out == 'R') gprmc_flag = 1; //detect start of GPRMC string
 		if (gprmc_flag == 1) {
@@ -46,7 +47,7 @@ int main(void){
 //			
 //		}
 	}
-	else PORTB = 0;
+	else PORTB &= 0b00000100;
 	
 
 	
