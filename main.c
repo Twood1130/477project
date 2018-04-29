@@ -8,8 +8,8 @@
 #include "lcd.h"
 
 int main(void){
-  char gps_out;
-  int gprmc_flag = 0, lcd_index = 0;
+  char gps_out[65] = "wtf";
+  int gprmc_flag = 0, rmc_index = 0;
   // Watchdog timer disable
   MCUSR=0;
   wdt_disable(); 
@@ -30,14 +30,21 @@ int main(void){
   while (1) {
 	if (UCSR0A & (1 << RXC0)){
 		PORTB |= (1 << PIN0);
-		gps_out = UDR0;
-		if (gps_out == 'R') gprmc_flag = 1; //detect start of GPRMC string
+		
+		if (gprmc_flag == 0){
+			if (UDR0 == 'R') gprmc_flag = 1; //detect start of GPRMC string
+		} 
+		
 		if (gprmc_flag == 1) {
-			lcd_putc(gps_out);
-			lcd_index += 1;
-			if ((lcd_index == 32) | (gps_out == '\n')){
+			gps_out[rmc_index] = UDR0;
+			rmc_index += 1;
+			if ((UDR0 == '\n') | (rmc_index == 16)){
 				gprmc_flag = 0;
-				//lcd_command(LCD_HOME);
+				rmc_index = 0;
+				
+				//lcd_clrscr();
+				lcd_command(LCD_HOME);
+				lcd_puts(gps_out);
 			}
 		}
 			
