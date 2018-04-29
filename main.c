@@ -54,13 +54,14 @@ int main(void){
 		else if (gprmc_flag == 1) {
 			gps_out[rmc_index] = UDR0;
 			rmc_index += 1;
-			if ((UDR0 == '\n') | (rmc_index == 16)){
+			if ((UDR0 == '\n') | (rmc_index == 65)){
 				gprmc_flag = 0;
 				rmc_index = 0;
 				
+				parse(gps_out,button2);
 				//lcd_clrscr();
-				lcd_command(LCD_HOME);
-				lcd_puts(gps_out);
+				//lcd_command(LCD_HOME);
+				//lcd_puts(gps_out);
 			}
 		}
 			
@@ -79,43 +80,82 @@ int main(void){
 return 0;
 }
 
-void getDATA (char *NMEA, char *time, char *active, char *LAT, char *LONG, char *speed, char *date) {
+void parse(char NMEA[65],int button){
+	
+	int i,j,k;
+	
+	char str1[33] = "LAT:            \nLON:            ";//initialize strings
+	char str2[33] = "T:       D:      \nSpeed:     Knts";
+	
+	for(i = 0; i < 65; i++){
+		if(NMEA[i] == ',')break;
+	}
+	
+	j = 0;
+	for(i++; i < 65; i++){ //time
+		if(NMEA[i] == ',') break;
+		if (j <= 6) str2[j+2] = NMEA[i];//time
+		j++;
+	}
 
-	char *start, *end;
 	
-	start = strchr(NMEA, ','); //Find the beginning field 1
-	end = strchr((start += 1), ','); //Find the end of field 1
-	*end = 0; //truncate the string
-	*time = *start;
-
-	start = (end += 1); //start of next field 
-	end = strchr(start, ',');
-	*end = 0;
-	*active = *start;
+	for(i++; i < 65; i++){//skip active bit
+		if(NMEA[i] == ',')break;
+	}
 	
-	start = (end += 1); //start at the beginning of Latitude field
-	end = strchr(start, ','); //find the next comma 
-	end = strchr(++end, ','); //find next comma to include the cardinal direction 
-	*end = 0; //zero terminate
-	*LAT = *start; //assign leftover string to variable. 
+	j = 0;
+	for(i++; i < 65; i++){//latitude
+		if(NMEA[i] == ',')break;
+		if (j <= 10) str1[j+5] = NMEA[i];
+		j++;
+	}
 	
-	start = (end += 1); //find the start of the Longitude field 
-	end = strchr(start, ',');
-	end = strchr(++end, ','); //include the cardinal direction. 
-	*end = 0;
-	*LONG = *start;
+	i++;
+	j = 0;
+	str1[15] = NMEA[i]; //N or S
 	
-	start = (end += 1);
-	end = strchr(start, ',');
-	*end = 0;
-	*speed = *start; 
+	j = 0;
+	for(i += 2; i < 65; i++){ //longitude
+		if(NMEA[i] == ',')break;
+		if (j <= 10) str1[j+22] = NMEA[i];
+		j++;
+	}
 	
-	start = strchr((end += 1), ',');
-	start += 1;
-	end = strchr(start, ',');
-	*end = 0;
-	*date = *start;
+	i++;
+	j = 0;
+ 	str1[32] = NMEA[i];//E or W
+	i += 2;
 	
-	//use atof(start) if need to convert to float. 
-}	
+	
+	j = 0;
+	for(i; i < 65; i++){//speed
+		if(NMEA[i] == ',')break;
+		str2[j+25] = NMEA[i];
+		j++;
+	}
+	
+	j = 0;
+	for(i++; i < 65; i++){//skip angle
+		if(NMEA[i] == ',')break;
+	}
+	
+	j = 0;
+	for(i++; i < 65; i++){//date
+		if(NMEA[i] == ',')break;
+		str2[j+11] = NMEA[i];
+		j++;
+	}						
+				if (button){//display speed, time info if button 2 is pressed
+					lcd_command(LCD_HOME);
+					for(k = 0; k <= 32; k++){
+						lcd_putc(str2[k]);
+					}
+				}
+				else{ 
+					lcd_command(LCD_HOME); //else display coordinates
+					for(k = 0; k <= 32; k++){
+						lcd_putc(str1[k]);
+					}
+				}
+}
 	
