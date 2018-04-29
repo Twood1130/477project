@@ -2,7 +2,7 @@
 #define DELAY 1000
 
 #include <stdio.h>
-#include <stdio.h>
+#include <string.h>
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -11,33 +11,33 @@
 #include "lcd.h"
 
 int main(void){
-<<<<<<< HEAD
-  char gps_out[65] = "wtf";
+	
+	
+  char gps_out[65] = "wtf"; //initialize the gps string.
   int gprmc_flag = 0, rmc_index = 0;
-=======
-  char gps_out;
-  int gprmc_flag = 0, lcd_index = 0;
+  int button1 = 1;
+  int button2 = 1;
   
-  FILE *test;
-  
->>>>>>> origin/master
   // Watchdog timer disable
   MCUSR=0;
   wdt_disable(); 
 
-  // Set pin 0 as output, 1 as input
+  // Set pins D0, and D2 as output.
   DDRB |= (1 << PIN0) | (1 << PIN2);
-  PORTB = (1 << PIN2); //turn on backlight
+  DDRB &= ~(1<<PIN7); //pin B7 for pushbutton 2
+  PORTB = (1 << PIN2); //turn on pin D2, this turns on the backlight.
 
+  DDRD &= ~(1<<PIN3); // set Pin D3 as input
+  
   //USART init
-  UCSR0A |= (1 << U2X0);
+  UCSR0A |= (1 << U2X0); //enable 2x USART operation
   UCSR0C |= (1 << UCSZ01) | (1 << UCSZ00); //set USART to 8-bits
-  UBRR0 = 12; //set baud rate to 9600, at 1.8432 mhz
+  UBRR0 = 12; //set baud rate to 9600, at 1 mhz
+  UCSR0B |= (1 << RXEN0); //enable USART RX
   
-  //lcd_init(LCD_DISP_ON_CURSOR_BLINK);
+  //LCD init
+  lcd_init(LCD_DISP_ON_CURSOR_BLINK);
   lcd_puts("1234567890ABCDEF\nGHIJKLMOPQRSTUVW");
-  
-  UCSR0B |= (1 << RXEN0);
   
   while (1) {
 	if (UCSR0A & (1 << RXC0)){
@@ -60,17 +60,15 @@ int main(void){
 			}
 		}
 			
-		
-//		if ((gprmc_flag == 1) && (gps_out == ',')){ //comma indexed value finder
-//			commas += 1;
-//			
-//		}
 	}
-	else PORTB &= 0b00000100;
+	else PORTB &= (1 << PIN2); //turn indicator LED off.
 	
-
+	button1 = ((PINB >> PIN7) & 1);
+	button2 = ((PIND >> PIN3) & 1);
 	
-	//_delay_ms(500);
+	if (button1){ //This toggles the backlight with a button press.
+		PORTB ^= (1 << PIN2);
+	}
   }
 
 return 0;
@@ -81,37 +79,37 @@ void getDATA (char *NMEA, char *time, char *active, char *LAT, char *LONG, char 
 	char *start, *end;
 	
 	start = strchr(NMEA, ','); //Find the beginning field 1
-	end = strchr(++start, ','); //Find the end of field 1
+	end = strchr((start += 1), ','); //Find the end of field 1
 	*end = 0; //truncate the string
-	*time = start;
+	*time = *start;
 
-	start = ++end; //start of next field 
+	start = (end += 1); //start of next field 
 	end = strchr(start, ',');
 	*end = 0;
-	*active = start;
+	*active = *start;
 	
-	start = ++end; //start at the beginning of Latitude field
+	start = (end += 1); //start at the beginning of Latitude field
 	end = strchr(start, ','); //find the next comma 
 	end = strchr(++end, ','); //find next comma to include the cardinal direction 
 	*end = 0; //zero terminate
-	*LAT = start; //assign leftover string to variable. 
+	*LAT = *start; //assign leftover string to variable. 
 	
-	start = ++end; //find the start of the Longitude field 
+	start = (end += 1); //find the start of the Longitude field 
 	end = strchr(start, ',');
 	end = strchr(++end, ','); //include the cardinal direction. 
 	*end = 0;
-	*LONG = start;
+	*LONG = *start;
 	
-	start = ++end;
+	start = (end += 1);
 	end = strchr(start, ',');
 	*end = 0;
-	*speed = start; 
+	*speed = *start; 
 	
-	start = strchr(++end, ',');
-	start = ++start;
+	start = strchr((end += 1), ',');
+	start += 1;
 	end = strchr(start, ',');
 	*end = 0;
-	*date = start;
+	*date = *start;
 	
 	//use atof(start) if need to convert to float. 
 }	
