@@ -44,10 +44,14 @@ int main(void){
 		PORTB |= (1 << PIN0);
 		
 		if (gprmc_flag == 0){
-			if (UDR0 == 'R') gprmc_flag = 1; //detect start of GPRMC string
+		gps_out[0] = UDR0;
+			if (gps_out[0] == 'R') {
+				gprmc_flag = 1; //detect start of GPRMC string
+				rmc_index += 1;
+			}
 		} 
 		
-		if (gprmc_flag == 1) {
+		else if (gprmc_flag == 1) {
 			gps_out[rmc_index] = UDR0;
 			rmc_index += 1;
 			if ((UDR0 == '\n') | (rmc_index == 16)){
@@ -68,6 +72,7 @@ int main(void){
 	
 	if (button1){ //This toggles the backlight with a button press.
 		PORTB ^= (1 << PIN2);
+		_delay_ms(250);
 	}
   }
 
